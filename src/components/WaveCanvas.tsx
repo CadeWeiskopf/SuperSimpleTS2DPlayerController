@@ -12,7 +12,7 @@ const drawSineWave = (context: CanvasRenderingContext2D, xOffset: number) => {
 
   let x = xOffset;
   let y = 0;
-  const amplitude = 80;
+  let amplitude = 80;
   const frequency = 70;
   const width = context.canvas.width;
   const height = context.canvas.height;
@@ -26,7 +26,7 @@ const drawSineWave = (context: CanvasRenderingContext2D, xOffset: number) => {
     if (x < waveZone.start || x > waveZone.end) {
       y = height / 2;
     } else {
-      y = height / 2 + amplitude * Math.sin(x / frequency);
+      y = height / 2 + amplitude * Math.sin(x / frequency - xOffset);
     }
     context.lineTo(x, y);
     x = x + 1;
