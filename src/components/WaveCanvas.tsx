@@ -40,11 +40,14 @@ const WaveCanvas: React.FunctionComponent<WaveProps> = (props) => {
       x = x + 1;
     }
     context.stroke();
-    context.fillStyle = "blue"; // set the fill color to blue
+
+    // do water
+    context.fillStyle = "blue";
     context.lineTo(width, height); // draw a line to the bottom right corner of the canvas
     context.lineTo(0, height); // draw a line to the bottom left corner of the canvas
     context.lineTo(0, y); // draw a line back to the starting point
     context.fill(); // fill the are
+
     const currentTime = Date.now();
     const elapsedTime = currentTime - startTime;
     console.log(elapsedTime);
@@ -59,8 +62,6 @@ const WaveCanvas: React.FunctionComponent<WaveProps> = (props) => {
       animationIdRef.current = window.requestAnimationFrame(() =>
         drawSineWaveWithAnimationFrame(context, xOffset)
       );
-      //window.cancelAnimationFrame(animationIdRef.current); // reset the animationId to 0
-      //animationIdRef.current = 0;
     }
   };
 
