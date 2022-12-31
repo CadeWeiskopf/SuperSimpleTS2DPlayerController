@@ -50,7 +50,6 @@ const WaveCanvas: React.FunctionComponent<WaveProps> = (props) => {
 
     const currentTime = Date.now();
     const elapsedTime = currentTime - startTime;
-    console.log(elapsedTime);
     const t = elapsedTime / props.animationDuration;
     const newXOffset = xOffset + t;
     startTime = currentTime;
