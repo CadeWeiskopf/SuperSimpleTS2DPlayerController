@@ -1,51 +1,63 @@
-import { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 
 interface WaveProps {
   width: number;
   height: number;
+  waveAmplitude: number; // control wave size
+  waveFrequency: number; // control wave speed
+  animationDuration: number; // control animation speed
 }
-let drawing = false;
-const drawSineWave = (context: CanvasRenderingContext2D, xOffset: number) => {
-  drawing = true;
-  context.beginPath();
-  context.lineWidth = 2;
-
-  let x = xOffset;
-  let y = 0;
-  let amplitude = 80;
-  const frequency = 70;
-  const width = context.canvas.width;
-  const height = context.canvas.height;
-  const waveZone = {
-    start: context.canvas.width / 4,
-    end: context.canvas.width - context.canvas.width / 4,
-  };
-  //let smoothedStart: boolean = false;
-  //let smoothedEnd: boolean = false;
-  while (x < width) {
-    if (x < waveZone.start || x > waveZone.end) {
-      y = height / 2;
-    } else {
-      y = height / 2 + amplitude * Math.sin(x / frequency - xOffset);
-    }
-    context.lineTo(x, y);
-    x = x + 1;
-  }
-  context.stroke();
-  drawing = false;
-};
 
 const WaveCanvas: React.FunctionComponent<WaveProps> = (props) => {
   const [xOffset, setXOffset] = useState<number>(0);
-  let handleXOffsetIntervalId: number = 0;
-  const handleUpdateXOffset = () => {
-    handleXOffsetIntervalId = Number(
-      setInterval(() => {
-        setXOffset((prevOffsetX) => prevOffsetX + 1);
-      }, 100)
-    );
-  };
+  let startTime: number = 0;
+
   const canvas = useRef<HTMLCanvasElement>(null);
+  const animationIdRef = useRef<number>(0);
+  const drawSineWaveWithAnimationFrame = (
+    context: CanvasRenderingContext2D,
+    xOffset: number
+  ) => {
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+    context.beginPath();
+    context.lineWidth = 2;
+    let x = 0;
+    let y = 0;
+    const { waveAmplitude, waveFrequency } = props;
+    const width = context.canvas.width;
+    const height = context.canvas.height;
+    const waveZone = {
+      start: 0, //context.canvas.width / 8,
+      end: context.canvas.width, //context.canvas.width - context.canvas.width / 8,
+    };
+    while (x < width) {
+      if (x < waveZone.start || x > waveZone.end) {
+        y = height / 2;
+      } else {
+        y = height / 2 + waveAmplitude * Math.sin(x / waveFrequency - xOffset);
+      }
+      context.lineTo(x, y);
+      x = x + 1;
+    }
+    context.stroke();
+    const currentTime = Date.now();
+    const elapsedTime = currentTime - startTime;
+    console.log(elapsedTime);
+    const t = elapsedTime / props.animationDuration;
+    const newXOffset = xOffset + t;
+    startTime = currentTime;
+    if (elapsedTime < props.animationDuration) {
+      animationIdRef.current = window.requestAnimationFrame(() =>
+        drawSineWaveWithAnimationFrame(context, newXOffset)
+      );
+    } else {
+      animationIdRef.current = window.requestAnimationFrame(() =>
+        drawSineWaveWithAnimationFrame(context, xOffset)
+      );
+      //window.cancelAnimationFrame(animationIdRef.current); // reset the animationId to 0
+      //animationIdRef.current = 0;
+    }
+  };
 
   useEffect(() => {
     if (canvas.current === null) {
@@ -56,24 +68,35 @@ const WaveCanvas: React.FunctionComponent<WaveProps> = (props) => {
       return;
     }
 
+    startTime = Date.now();
+
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-    // game stuff here
-    drawSineWave(context, xOffset);
-    handleUpdateXOffset();
+    // start the animation
+    animationIdRef.current = window.requestAnimationFrame(() =>
+      drawSineWaveWithAnimationFrame(context, xOffset)
+    );
 
     const resizeListener = () => {
+      window.cancelAnimationFrame(animationIdRef.current); // reset theanimationId to 0
+      animationIdRef.current = 0;
       context.canvas.width = window.innerWidth;
       context.canvas.height = window.innerHeight;
-      drawSineWave(context, xOffset);
+      drawSineWaveWithAnimationFrame(context, xOffset);
     };
     window.addEventListener("resize", resizeListener);
 
     return () => {
       window.removeEventListener("resize", resizeListener);
-      clearInterval(handleXOffsetIntervalId);
+      window.cancelAnimationFrame(animationIdRef.current);
     };
-  }, [xOffset]);
+  }, [
+    xOffset,
+    props.animationDuration,
+    props.waveAmplitude,
+    props.waveFrequency,
+  ]);
+
   return <canvas ref={canvas} width={props.width} height={props.height} />;
 };
 
