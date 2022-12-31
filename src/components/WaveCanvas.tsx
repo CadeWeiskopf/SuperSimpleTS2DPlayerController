@@ -1,15 +1,16 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 interface WaveProps {
   width: number;
   height: number;
 }
-
-const drawSineWave = (context: CanvasRenderingContext2D) => {
+let drawing = false;
+const drawSineWave = (context: CanvasRenderingContext2D, xOffset: number) => {
+  drawing = true;
   context.beginPath();
   context.lineWidth = 2;
 
-  let x = 0;
+  let x = xOffset;
   let y = 0;
   const amplitude = 80;
   const frequency = 70;
@@ -31,10 +32,21 @@ const drawSineWave = (context: CanvasRenderingContext2D) => {
     x = x + 1;
   }
   context.stroke();
+  drawing = false;
 };
 
 const WaveCanvas: React.FunctionComponent<WaveProps> = (props) => {
+  const [xOffset, setXOffset] = useState<number>(0);
+  let handleXOffsetIntervalId: number = 0;
+  const handleUpdateXOffset = () => {
+    handleXOffsetIntervalId = Number(
+      setInterval(() => {
+        setXOffset((prevOffsetX) => prevOffsetX + 1);
+      }, 100)
+    );
+  };
   const canvas = useRef<HTMLCanvasElement>(null);
+
   useEffect(() => {
     if (canvas.current === null) {
       return;
@@ -44,20 +56,24 @@ const WaveCanvas: React.FunctionComponent<WaveProps> = (props) => {
       return;
     }
 
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+
     // game stuff here
-    drawSineWave(context);
+    drawSineWave(context, xOffset);
+    handleUpdateXOffset();
 
     const resizeListener = () => {
       context.canvas.width = window.innerWidth;
       context.canvas.height = window.innerHeight;
-      drawSineWave(context);
+      drawSineWave(context, xOffset);
     };
     window.addEventListener("resize", resizeListener);
 
     return () => {
       window.removeEventListener("resize", resizeListener);
+      clearInterval(handleXOffsetIntervalId);
     };
-  }, []);
+  }, [xOffset]);
   return <canvas ref={canvas} width={props.width} height={props.height} />;
 };
 
